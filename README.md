@@ -1,5 +1,6 @@
 # PuppetMaster:
 Linux反向shell中控平台，主体0第三方依赖及轻量化异步
+![20240719](https://github.com/user-attachments/assets/7420c565-2a48-4e4c-943b-b87729db554f)
 
 # Todo:
 - 社区版
@@ -15,3 +16,4 @@ Linux反向shell中控平台，主体0第三方依赖及轻量化异步
   - [ ] 用户态/内核态Rootkit
   - [ ] Linux植入物免杀
   - [ ] 多用户支持（多人协作）
+  
