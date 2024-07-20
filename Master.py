@@ -196,7 +196,7 @@ async def MasterConsole():
 
         elif console_cmd.split() and console_cmd.split()[0] == "sessions" :
             for session in Puppet_Master.sessions:
-                print(f"\033[1;37m{session['hash']}\033[0m  {session['hostname'].ljust(16,' ')} {session['username'].ljust(8,' ')}  {session['sockname']} -> {session['peername']}  {session['org']}  {session['inittime']}")
+                print(f"\033[1;37m{session['hash']}\033[0m  {session['hostname'].ljust(20,' ')} {session['username'].ljust(8,' ')}  {session['sockname']} -> {session['peername']}  {session['org']}  {session['inittime']}")
             
         elif console_cmd.split() and console_cmd.split()[0] == "listerner":
             print()
