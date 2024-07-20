@@ -43,6 +43,7 @@ class PuppetMaster:
         command = command + "\n"
         if self.current_session.get("writer") and self.current_session.get("reader"):
             self.current_session["writer"].write( command.encode() )
+            await self.current_session["writer"].drain()
 
     def close(self):
         self.current_session["writer"].close()
