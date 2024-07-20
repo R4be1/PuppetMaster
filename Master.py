@@ -243,6 +243,8 @@ def randomString():
     return ''.join(random.sample('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 16))
 
 def getTextBetweenStrings(text, start_string, end_string):
+    if (start_string not in text) or (end_string not in text):
+        return "<unknown>"
     start_index = text.rfind(start_string) + len(start_string)
     end_index = text.rfind(end_string, start_index)
     return text[start_index:end_index]
