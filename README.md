@@ -2,6 +2,17 @@
 Linux反向shell中控平台，主体0第三方依赖及轻量化异步
 ![20240719](https://github.com/user-attachments/assets/7420c565-2a48-4e4c-943b-b87729db554f)
 
+# Help:
+### Master Console:
+sessions ： 列出所有会话
+use      ： 使用指定会话（tab键补全）
+
+### Session:
+sessions ： 列出所有会话
+execute  ： 命令执行（execute ps -ef）
+shell    ： 交互式Shell
+bg       ： 会话/shell中可回退且不关闭会话
+
 # Todo:
 - 社区版
   - [x] 无加密通用TCP反弹Shell
