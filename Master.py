@@ -85,6 +85,7 @@ async def handle_shell_init(reader, writer):
 
     if Puppet_Master.Persistence:
         writer.write( Puppet_Master.PersistenceCommand.encode() + "\n".encode() )
+        await writer.drain()
 
     writer.write( f"echo {randomStringInitEndSuffix}\n".encode() )
     await writer.drain()
