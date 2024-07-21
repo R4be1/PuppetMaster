@@ -1,6 +1,6 @@
 # PuppetMaster:
 Linux反向shell中控平台，主体0第三方依赖及轻量化异步
-![图片](https://github.com/user-attachments/assets/4665c34c-b3c3-4a51-976e-d425c03d8eea)
+![图片](https://github.com/user-attachments/assets/5bebaee8-cf2e-4480-ad96-7b81690d9abf)
 
 # Help:
 ### Master Console:
