@@ -21,7 +21,7 @@ Linux反向shell中控平台，主体0第三方依赖及轻量化异步
   - [x] Session Hash（唯一权限避免重复）
   - [x] 基础deamon进程权限维持
   - [x] Linux反向Shell-release（SSLShell elf二进制文件但不包含免杀对抗）
-  - [ ] 批量执行命令
+  - [x] 批量执行命令
 - 商业版
   - [x] 社区版所有功能及部分优化
   - [ ] 用户态/内核态Rootkit
