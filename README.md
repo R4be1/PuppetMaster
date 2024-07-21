@@ -4,8 +4,9 @@ Linux反向shell中控平台，主体0第三方依赖及轻量化异步
 
 # Help:
 ### Master Console:
+- BATCH-EXECUTE  ： 批量命令执行（目前只支持全部批量，部分批量有待考量）
 - sessions ： 列出所有会话
-- use      ： 使用指定会话（tab键补全）
+- use      ： 使用指定会话（tab键补全）可使用远程连接的地址如(1.1.1.1:12345)
 
 ### Session:
 - sessions ： 列出所有会话
