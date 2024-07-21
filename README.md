@@ -19,6 +19,11 @@ Linux反向shell中控平台，主体0第三方依赖及轻量化异步，默认
 - shell    ： 交互式Shell
 - bg       ： 会话/shell中可回退且不关闭会话
 
+### Make Implant:
+修改服务端IP：
+![图片](https://github.com/user-attachments/assets/69d8a14d-652a-47f8-9c75-a68efad433f1)
+cd SSL-shell && make linux 即可，非SSL的版本没啥实现的必要。
+
 # Todo:
 - 社区版
   - [x] 无加密通用TCP反弹Shell
