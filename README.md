@@ -1,5 +1,5 @@
 # PuppetMaster:
-Linux反向shell中控平台，主体0第三方依赖及轻量化异步
+Linux反向shell中控平台，主体0第三方依赖及轻量化异步，默认自带无限制持久化，防止任何服务端意外导致权限丢失。
 ![图片](https://github.com/user-attachments/assets/5bebaee8-cf2e-4480-ad96-7b81690d9abf)
 硬性Windows平台用户注意：Windows报错缺少readline库是因为Windows版的Python官方库中不包含readline,在Windows上pip install readline也会报错，如果一定要在Windows平台上跑的话可以把import readline改成第三方库或直接注释readline相关的行（就三行，但会缺少补全功能）
 
