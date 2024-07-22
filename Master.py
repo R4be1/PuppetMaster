@@ -51,7 +51,7 @@ class PuppetMaster:
 Puppet_Master = PuppetMaster()
 
 def completer(text, state):
-    func = ['cls', 'clear', 'listeners', 'handlers', 'sessions', 'execute ', 'exit', 'BATCH-EXECUTE ', 'use '] + [ _['hash'] for _ in Puppet_Master.sessions ]
+    func = ['cls', 'clear', 'listeners', 'handlers', 'sessions', 'execute ', 'close', 'exit', 'BATCH-EXECUTE ', 'use '] + [ _['hash'] for _ in Puppet_Master.sessions ]
     matches = [ _ for _ in func if _.startswith(text) ]
     if state < len(matches):
         return matches[state]
