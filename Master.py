@@ -102,6 +102,7 @@ async def handle_shell_init(reader, writer):
             init_data += data
 
             if randomStringInitEndSuffix in data.decode():
+                # getTextBetweenStrings()未匹配到则返回<unknown>,若hostname或uesrname中包含也返回<unknown>
                 puppetHash = getTextBetweenStrings(
                         init_data.decode().replace(f"echo {randomStringPrefix}", "").replace(f"echo {randomStringSuffix}", ""),
                         randomStringPrefix,
@@ -125,6 +126,12 @@ async def handle_shell_init(reader, writer):
                         randomStringCPUinfoPrefix,
                         randomStringCPUinfoSuffix
                         ).strip()
+
+                if "\n" in hostname:
+                    hostname = "<unknown>"
+                  
+                if "\n" in username:
+                  username = "<unknown>"
 
                 #获取CPU核心数
                 session_cpu_core = str(cpuinfo.count("processor"))
