@@ -35,7 +35,7 @@ cd SSL-shell && make linux 即可，而后会生成sslshell这个文件。
   - [x] 多反弹Shell接收
   - [x] Session Hash（唯一权限避免重复）
   - [x] 基础deamon进程权限维持
-  - [x] Linux反向Shell-release（SSLShell elf二进制文件但不包含免杀对抗）
+  - [x] Linux反向Shell-release（SSLShell elf二进制文件但不包含免杀对抗，目前2024/7月社区版VT全过）
   - [x] 批量执行命令
   - [ ] 钉钉/邮箱上线提示
   - [ ] 安静模式（不在终端输出上线信息）
