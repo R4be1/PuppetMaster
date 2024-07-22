@@ -47,8 +47,6 @@ class PuppetMaster:
             self.current_session["writer"].write( command.encode() )
             await self.current_session["writer"].drain()
 
-    def close(self):
-        self.current_session["writer"].close()
 
 Puppet_Master = PuppetMaster()
 
@@ -101,7 +99,7 @@ async def handle_shell_init(reader, writer):
             data = await asyncio.wait_for( reader.read(40960), timeout=10 )
             init_data += data
 
-            if randomStringInitEndSuffix in data.decode():
+            if randomStringInitEndSuffix in data.decode().replace(f"echo {randomStringInitEndSuffix}", ""):
                 # getTextBetweenStrings()未匹配到则返回<unknown>,若hostname或uesrname中包含也返回<unknown>
                 puppetHash = getTextBetweenStrings(
                         init_data.decode().replace(f"echo {randomStringPrefix}", "").replace(f"echo {randomStringSuffix}", ""),
@@ -258,16 +256,19 @@ async def MasterConsole():
 
                 Puppet_Master.current_session = None
 
-        elif console_cmd.strip() == "shell"  :
-            if Puppet_Master.current_session:
-                execute_result = await Puppet_Master.execute_cmd( "\n" )
-                while True:
-                    ConsolePrompt = ""
-                    shell_cmd = await asyncio.to_thread(input, ConsolePrompt)
-                    shell_cmd = shell_cmd.strip()
-                    if shell_cmd == "exit" or shell_cmd == "bg":
-                        break
-                    execute_result = await Puppet_Master.execute_cmd( shell_cmd )
+        elif Puppet_Master.current_session and console_cmd.strip() == "shell"  :
+            execute_result = await Puppet_Master.execute_cmd( "\n" )
+            while True:
+                ConsolePrompt = ""
+                shell_cmd = await asyncio.to_thread(input, ConsolePrompt)
+                shell_cmd = shell_cmd.strip()
+                if shell_cmd == "exit" or shell_cmd == "bg":
+                    break
+                execute_result = await Puppet_Master.execute_cmd( shell_cmd )
+              
+        elif Puppet_Master.current_session and console_cmd.strip() == "close"  :
+            Puppet_Master.current_session["writer"].close()
+            Puppet_Master.current_session = None
 
         elif console_cmd.split() and console_cmd.split()[0] == "use":
             if len(console_cmd.split()) >1:
