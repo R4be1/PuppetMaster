@@ -217,7 +217,7 @@ async def MasterConsole():
 
         elif console_cmd.split() and console_cmd.split()[0] == "sessions" :
             print(
-                    "Sessions {}".format(Puppet_Master.current_session).ljust(32," ") + " " +
+                    "Sessions {}".format(len(Puppet_Master.sessions)).ljust(32," ") + " " +
                     "Hostname".ljust(20," ") + " " +
                     "Username".ljust(8," ") + " " +
                     "CPU "
