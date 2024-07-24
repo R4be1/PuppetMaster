@@ -161,7 +161,7 @@ async def handle_shell_init(reader, writer):
                     session["org"] = org[0]+org[1]
                     Puppet_Master.sessions.append(session)
                     PrintInfo(f'Session \033[1;37m{session_hash}\033[0m {hostname} {username}  \033[1;37m{sockname} -> {peername}\033[0m {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
-                    dingding_send_meassage( f'Session \033[1;37m{session_hash}\033[0m {hostname} {username}  \033[1;37m{sockname} -> {peername}\033[0m {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")} {org}' )
+                    await asyncio.to_thread( dingding_send_meassage, f'Session \033[1;37m{session_hash}\033[0m {hostname} {username}  \033[1;37m{sockname} -> {peername}\033[0m {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")} {org}' )
                     break
 
                 else:
