@@ -182,7 +182,8 @@ async def handle_shell_init(reader, writer):
 
         except Exception as e :
             print(traceback.format_exc())
-            print(e)
+            writer.close()
+            return None
 
     while writer.is_closing()==False:
         data = await reader.read(40960)
