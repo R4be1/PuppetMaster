@@ -47,7 +47,7 @@ cd SSL-shell && make linux 即可，而后会生成sslshell这个文件。
 - 商业版
   - [x] 社区版所有功能及部分优化
   - [ ] 用户态/内核态Rootkit
-  - [ ] Linux植入物免杀
+  - [ ] Linux植入物反沙箱动静态免杀对抗
   - [ ] 多用户支持（多人协作）
   - [ ] HTTPS/ICMP/SSH加密内网隧道
   - [ ] 多用户Web控制端
