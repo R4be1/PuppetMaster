@@ -37,8 +37,9 @@ cd SSL-shell && make linux 即可，而后会生成sslshell这个文件。
   - [x] 基础deamon进程权限维持
   - [x] Linux反向Shell-release（SSLShell elf二进制文件但不包含免杀对抗，目前2024/7月社区版VT全过）
   - [x] 批量执行命令
-  - [ ] 钉钉/邮箱上线提示
+  - [x] 钉钉/邮箱上线提示
   - [x] 安静模式（不在终端输出上线信息）
+  - [ ] 命令执行结果history（主要是批量命令执行回显记录）
 - 商业版
   - [x] 社区版所有功能及部分优化
   - [ ] 用户态/内核态Rootkit
