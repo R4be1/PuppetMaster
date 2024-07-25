@@ -28,6 +28,10 @@ Linux反向shell中控平台，主体0第三方依赖及轻量化异步，默认
 
 cd SSL-shell && make linux 即可，而后会生成sslshell这个文件。
 
+### DingDing Webhook:
+将webhook url填入而后关键词设置为Puppet即可：
+![图片](https://github.com/user-attachments/assets/7623cfbb-6d6d-4f34-bfa1-f78305e77650)
+
 # Todo:
 - 社区版
   - [x] 无加密通用TCP反弹Shell
