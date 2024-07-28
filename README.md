@@ -21,6 +21,7 @@ Linux反向shell中控平台，主体0第三方依赖及轻量化异步，默认
 - execute  ： 命令执行（execute ps -ef）
 - shell    ： 交互式Shell
 - close    ： 关闭当前会话（不会杀掉持久化进程）
+- history  ： 输出完整的执行记录，包括执行的命令及回显
 - bg       ： 会话/shell中可回退且不关闭会话
 
 ### Make Implant:
