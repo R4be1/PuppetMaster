@@ -288,7 +288,7 @@ async def MasterConsole():
             Puppet_Master.current_session = None
 
         elif Puppet_Master.current_session and console_cmd == "history":
-            history = "".join( [ session["history"] for session in Puppet_Master.sessions if session["hash"]==Puppet_Master.current_session["hash"] ] )
+            history = "".join( [ session["history"].decode() for session in Puppet_Master.sessions if session["hash"]==Puppet_Master.current_session["hash"] ] )
             print(history)
 
         elif console_cmd == "quiet":
