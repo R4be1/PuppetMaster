@@ -188,7 +188,7 @@ async def handle_shell_init(reader, writer):
     while writer.is_closing()==False:
         data = await reader.read(40960)
         if data.decode():
-            #Puppet_Master.sessions[Puppet_Master.sessions.index(session)]["history"] += data
+            Puppet_Master.sessions[Puppet_Master.sessions.index(session)]["history"] += data
             if Puppet_Master.current_session and Puppet_Master.current_session["peername"] == peername:
                 print(data.decode(), end="")
 
