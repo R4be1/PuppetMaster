@@ -35,8 +35,7 @@ cd SSL-shell && make linux 即可，而后会生成sslshell这个文件。
 ![图片](https://github.com/user-attachments/assets/7623cfbb-6d6d-4f34-bfa1-f78305e77650)
 
 ### Tips：
-可以在植入物中添加重连和sleep的机制，实现beacon的效果。
-也可以在执行命令前加上sleep 123;使执行结果在123秒后再回传给C2。
+可以在执行命令前加上sleep 123;使执行结果在123秒后再回传给C2,但实际上tcp连接还是保持的。
 
 # Todo:
 - 社区版
