@@ -131,7 +131,7 @@ async def handle_shell_init(reader, writer):
                     hostname = "<unknown>"
                   
                 if "\n" in username:
-                  username = "<unknown>"
+                    username = "<unknown>"
 
                 #获取CPU核心数
                 session_cpu_core = str(cpuinfo.count("processor"))
