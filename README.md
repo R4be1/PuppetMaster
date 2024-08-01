@@ -56,3 +56,5 @@ cd SSL-shell && make linux 即可，而后会生成sslshell这个文件。
   - [ ] 多用户支持（多人协作）
   - [ ] HTTPS/ICMP/SSH加密内网隧道
   - [ ] 多用户Web控制端
+  - [ ] 白名单死点解析
+  - [ ] 类beacons效果
