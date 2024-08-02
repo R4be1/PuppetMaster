@@ -187,14 +187,18 @@ async def handle_shell_init(reader, writer):
 
     while writer.is_closing()==False:
         data = await reader.read(40960)
-        if data.decode():
-            Puppet_Master.sessions[Puppet_Master.sessions.index(session)]["history"] += data
-            if Puppet_Master.current_session and Puppet_Master.current_session["peername"] == peername:
-                print(data.decode(), end="")
-
-        else:
-            writer.close()
-            Puppet_Master.sessions.remove(session)
+        try:
+            if data.decode():
+                Puppet_Master.sessions[Puppet_Master.sessions.index(session)]["history"] += data
+                if Puppet_Master.current_session and Puppet_Master.current_session["peername"] == peername:
+                    print(data.decode(), end="")
+    
+            else:
+                writer.close()
+                Puppet_Master.sessions.remove(session)
+        except Exception as e:
+            print(e)
+            continue
 
 
     print(f'\033[1;31m[*]\033[0m Session \033[1;37m{session_hash}\033[0m {hostname} {username}  \033[1;37m{sockname} -> {peername}\033[0m {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")} Close')
