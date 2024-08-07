@@ -83,7 +83,7 @@ async def handle_shell_init(reader, writer):
     while True:
         try:
             randomStringInitPrefix = randomString()
-            writer.write( "echo {}\n".format(randomStringInitPrefix).encode() )
+            writer.write( "export HISTSIZE=0; echo {};\n".format(randomStringInitPrefix).encode() )
             await writer.drain()
             await asyncio.sleep(4)
 
