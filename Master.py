@@ -160,7 +160,7 @@ async def handle_shell_init(reader, writer):
                     username = "<unknown>"
 
                 #获取CPU核心数
-                session_cpu_core = str(cpuinfo.count("processor"))
+                session_cpu_core = str(cpuinfo.count("\nprocessor"))
                 #根据系统信息计算Session Hash
                 session_hash = hashlib.md5(puppetHash.encode()).hexdigest()
 
