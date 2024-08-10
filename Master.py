@@ -46,8 +46,11 @@ class PuppetMaster:
     async def execute_cmd(self, command):
         command = command + "\n"
         if self.current_session.get("writer") and self.current_session.get("reader"):
-            self.current_session["writer"].write( command.encode() )
-            await self.current_session["writer"].drain()
+            try:
+                self.current_session["writer"].write( command.encode() )
+                await self.current_session["writer"].drain()
+            except Exception as e:
+                print(e)
 
 
 Puppet_Master = PuppetMaster()
