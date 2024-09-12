@@ -336,9 +336,18 @@ async def MasterConsole():
                     break
                 execute_result = await Puppet_Master.execute_cmd( shell_cmd )
               
-        elif Puppet_Master.current_session and console_cmd.strip() == "close"  :
+        elif Puppet_Master.current_session and console_cmd.strip() == "close":
             Puppet_Master.current_session["writer"].close()
             Puppet_Master.current_session = None
+
+        elif Puppet_Master.current_session and console_cmd.strip() == "CtrlC":
+            await Puppet_Master.execute_cmd( "\003\r\n" )
+
+        elif Puppet_Master.current_session and console_cmd.strip() == "CtrlZ":
+            await Puppet_Master.execute_cmd( "\026\r\n" )
+
+        elif Puppet_Master.current_session and console_cmd.strip() == "CtrlD":
+            await Puppet_Master.execute_cmd( "\004\r\n" )
 
         elif console_cmd.split() and console_cmd.split()[0] == "use":
             if len(console_cmd.split()) >1:
