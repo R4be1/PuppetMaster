@@ -53,9 +53,9 @@ cd SSL-shell && make linux 即可，而后会生成sslshell这个文件。
   - [x] 社区版所有功能及部分优化
   - [ ] 用户态/内核态Rootkit
   - [ ] Linux植入物反沙箱动静态免杀对抗
-  - [ ] 多用户支持（多人协作）
+  - [x] 多用户支持（多人协作）
   - [ ] HTTPS/ICMP/SSH加密内网隧道
-  - [ ] 多用户Web控制端
+  - [x] 多用户Web控制端
   - [ ] 白名单死点解析
   - [ ] 类beacons效果
-  - [ ] 自定义Webshell兼容PHP/JSP/ASP/ASPX/CMDSHELL/....
+  - [x] 自定义Webshell兼容PHP/JSP/ASP/ASPX/CMDSHELL/....
