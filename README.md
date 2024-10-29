@@ -1,5 +1,5 @@
 # PuppetMaster（Linux C2）:
-Linux反向shell中控平台，主体0第三方依赖及轻量化异步，默认自带无限制持久化，防止任何服务端意外导致权限丢失。
+Linux反向shell/python-shell中控平台，主体0第三方依赖及轻量化异步，默认自带无限制持久化，防止任何服务端意外导致权限丢失。
 
 声明：本项目仅用于交流分享及合法授权活动，一切用户行为与作者无关且不负任何责任。
 
@@ -53,6 +53,7 @@ cd SSL-shell && make linux 即可，而后会生成sslshell这个文件。
   - [x] 社区版所有功能及部分优化
   - [ ] 用户态/内核态Rootkit
   - [ ] Linux植入物反沙箱动静态免杀对抗
+  - [ ] Python反向Shell植入物Beacon
   - [x] 多用户支持（多人协作）
   - [ ] HTTPS/ICMP/SSH加密内网隧道
   - [x] 多用户Web控制端
