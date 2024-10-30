@@ -54,4 +54,5 @@ cd SSL-shell && make linux 即可，而后会生成sslshell这个文件。
   - [ ] HTTPS/ICMP/SSH加密内网隧道
   - [x] 多用户Web控制端（多人协作）
   - [ ] 白名单死点解析
+  - [x] 上线同时获取ASN（社区版仅支持org）
   - [x] 自定义Webshell兼容PHP/JSP/ASP/ASPX/CMDSHELL/....
