@@ -82,7 +82,7 @@ cd SSL-shell && make linux 即可，而后会生成sslshell这个文件。
 将webhook url填入而后关键词设置为Puppet即可：
 ![图片](https://github.com/user-attachments/assets/7623cfbb-6d6d-4f34-bfa1-f78305e77650)
 
-# Todo:
+
 - 社区版
   - [x] 无加密通用TCP反弹Shell
   - [x] Openssl加密反弹Shell
@@ -94,13 +94,3 @@ cd SSL-shell && make linux 即可，而后会生成sslshell这个文件。
   - [x] 钉钉/邮箱上线提示
   - [x] 安静模式（不在终端输出上线信息）
   - [x] 命令执行结果history（主要是批量命令执行回显记录）
-- 商业版
-  - [x] 社区版所有功能及部分优化
-  - [ ] 用户态/内核态Rootkit
-  - [ ] Linux植入物反沙箱动静态免杀对抗
-  - [ ] Python反向Shell植入物Beacon
-  - [ ] HTTPS/ICMP/SSH加密内网隧道
-  - [x] 多用户Web控制端（多人协作）
-  - [ ] 白名单死点解析
-  - [x] 上线同时获取ASN（社区版仅支持org）
-  - [x] 自定义Webshell兼容PHP/JSP/ASP/ASPX/CMDSHELL/....
